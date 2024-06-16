@@ -7,7 +7,7 @@ rm -rf sing-box
 #git clone -b dev-next-yaott https://github.com/CHIZI-0618/sing-box.git sing-box
 git clone -b dev https://github.com/SagerNet/sing-quic.git sing-quic
 git clone -b sing-box-b-t-m https://github.com/White12352/sing-box.git sing-box
-git clone -b dev https://github.com/White12352/sing sing
+git clone -b dev-tl https://github.com/White12352/sing sing
 git clone -b 1.8.14 https://github.com/MatsuriDayo/sing-box.git sing-box-p
 cp -rf sing-box-p/nekoutils sing-box
 rm -rf sing-box-p
