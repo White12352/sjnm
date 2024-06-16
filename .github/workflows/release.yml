@@ -1,0 +1,62 @@
+name: Node.js Release Workflow
+
+on:
+  workflow_dispatch:
+  release:
+    types:
+      - created
+
+jobs:
+  release:
+    name: Release Process
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Create Release Artifact
+        run: |
+          mkdir release_artifact
+          cp -r dist release_artifact
+          cp -r scripts release_artifact
+          cp README.md release_artifact
+
+      - name: Upload Release Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: release-$GITHUB_REF
+          path: release_artifact
+
+      - name: Deploy to Production
+        if: github.event_name == 'release'
+        run: |
+          ssh user@production-server 'bash -s' < deploy-script.sh
+
+      - name: Notify Slack
+        if: always()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          status: ${{ job.status }}
+          text: |
+            *Node.js Release Pipeline Update*
+            Repository: ${{ github.repository }}
+            Release Tag: ${{ github.ref }}
+            Commit: ${{ github.sha }}
+            Outcome: ${{ job.status }}
