@@ -26,7 +26,7 @@ jobs:
 
       - name: code
         run: |
-          git clone -b main https://github.com/maskedeken/NekoBoxForAndroid.git nb
+          git clone -b main https://github.com/Restia-Ashbell/NekoBoxForAndroid.git nb
           rm -f nb/release.keystore
           mv -f .github/release.keystore nb
           rm -f nb/buildScript/lib/core.sh
@@ -37,7 +37,7 @@ jobs:
           cd ../..
           cd libcore
           #sed -i 's/"with_wireguard"/"with_wireguard"\n    "with_shadowsocksr"/g' build.sh
-          sed -i 's/with_wireguard/with_wireguard,with_shadowsocksr/g' build.sh
+          #sed -i 's/with_wireguard/with_wireguard,with_shadowsocksr/g' build.sh
           awk '{if(index($0, "// replace github.com/sagernet/sing =>") > 0) $0 = "replace github.com/sagernet/sing => ../../sing"}1' go.mod > temp_file && mv -f temp_file go.mod
           #awk '{if ($0 ~ /\/\/ replace github\.com\/sagernet\/sing-dns => \.\.\/\.\.\/sing-dns/) {print "// replace github.com/sagernet/sing-dns => ../../sing-dns"; print ""; print "replace github.com/sagernet/sing-quic => ../../sing-quic"} else {print $0}}' go.mod > temp_file && mv -f temp_file go.mod
           awk '{if(index($0, "replace github.com/sagernet/sing-box =>") > 0) $0 = "replace github.com/sagernet/sing-box => ../../sing-box"}1' go.mod > temp_file && mv -f temp_file go.mod
@@ -51,7 +51,7 @@ jobs:
         run: |
           git config user.email "github-actions@github.com"
           git config user.name "GitHub Actions"
-          git checkout -b dev2.1
+          git checkout -b dev2.2
           rm -rf .github
           rm -f README.md
           cp -r nb/* .
@@ -59,4 +59,4 @@ jobs:
           rm -rf nb
           git add .
           git commit -m "commit"
-          git push --force origin dev2.1
+          git push --force origin dev2.2
