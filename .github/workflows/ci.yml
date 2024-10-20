@@ -1,45 +1,56 @@
-name: CI/CD Workflow
-
+name: CI
 on:
   push:
+    tags-ignore:
+      - 'v*'
     branches:
-      - main
-
+      - '*'
+  pull_request:
 jobs:
   build:
-    name: Build and Deploy
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Libcore Status
+        run: git ls-files buildScript libcore | xargs cat | sha1sum > libcore_status
+      - name: LibCore Cache
+        id: cache
+        uses: actions/cache@v4
         with:
-          node-version: '14'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build
-        run: npm run build
-
-      - name: Deploy to Firebase Hosting
-        uses: w9jds/firebase-action@v2
+          path: |
+            app/libs/libcore.aar
+          key: ${{ hashFiles('.github/workflows/*', 'libcore_status') }}-ci
+      - name: Gradle cache
+        uses: actions/cache@v4
         with:
-          args: deploy --only hosting
-
-      - name: Notify Slack
-        if: always()
-        uses: rtCamp/action-slack-notify@v2
+          path: ~/.gradle
+          key: gradle-oss-${{ hashFiles('**/*.gradle.kts') }}-ci
+      - name: Setup Golang
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: Native Build
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: ./run lib core
+      - name: Gradle Build
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          BUILD_PLUGIN: none
+        run: |
+          export LOCAL_PROPERTIES="${{ secrets.LOCAL_PROPERTIES }}"
+          ./run init action gradle
+          ./gradlew app:assembleOssDebug
+          APK=$(find app/build/outputs/apk -name '*arm64-v8a*.apk')
+          APK=$(dirname $APK)
+          echo "APK=$APK" >> $GITHUB_ENV
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          status: ${{ job.status }}
-          text: |
-            *CI/CD Pipeline Update*
-            Repository: ${{ github.repository }}
-            Branch: ${{ github.ref }}
-            Commit: ${{ github.sha }}
-            Outcome: ${{ job.status }}
+          name: APKs
+          path: ${{ env.APK }}
